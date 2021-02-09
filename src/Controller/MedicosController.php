@@ -76,11 +76,7 @@ class MedicosController extends AbstractController
     public function atualiza(int $id, Request $request): Response
     {
         $corpoRequisicao = $request->getContent();
-        $dadosEmJson = json_decode($corpoRequisicao);
-
-        $medicoEnviado = new Medico();
-        $medicoEnviado->crm = $dadosEmJson->crm;
-        $medicoEnviado->nome = $dadosEmJson->nome;
+        $medicoEnviado   = $this->medicoFactory->criarMedico($corpoRequisicao);
 
         $medicoExistente = $this->buscaMedico($id);
         
@@ -88,14 +84,15 @@ class MedicosController extends AbstractController
             return new Response('', Response::HTTP_NOT_FOUND);
         }
 
-        $medicoExistente->crm  = $medicoEnviado->crm;
-        $medicoExistente->nome = $medicoEnviado->nome;
+        $medicoExistente
+            ->setCrm($medicoEnviado->getCrm())
+            ->setNome($medicoEnviado->getNome());
 
         $this->entityManager->flush();
 
         return new JsonResponse($medicoExistente);
     }
-
+    
     /**
     * @Route("/medicos/{id}", methods={"DELETE"})
     */
@@ -108,7 +105,7 @@ class MedicosController extends AbstractController
         //remover no database
         $this->entityManager->flush();
 
-        return new Response('Deletado', Response::HTTP_NO_CONTENT);
+        return new Response('Medico Deletado', Response::HTTP_NO_CONTENT);
     }
 
     /**
@@ -119,11 +116,9 @@ class MedicosController extends AbstractController
     {
         $repositorioDeMedicos = $this
         ->getDoctrine()
-        ->getReference(Medico::class,$id);
+        ->getRepository(Medico::class);
 
-        $medico = $repositorioDeMedicos;
-
-        return $medico;
+        return $repositorioDeMedicos->find($id);
     }
 
 } 
